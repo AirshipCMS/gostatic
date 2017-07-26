@@ -1,4 +1,7 @@
 FROM centurylink/ca-certs
 
-COPY gostatic /
+ADD gostatic /
+
+EXPOSE 80
+
 ENTRYPOINT ["/gostatic"]
