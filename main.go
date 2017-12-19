@@ -74,6 +74,7 @@ func main() {
 		if prefix[len(prefix)-1:] != "/" {
 			prefix = prefix + "/"
 		}
+		http.HandleFunc(prefix+"_version", versionHandler)
 		http.Handle(prefix, http.StripPrefix(prefix[:len(prefix)-1], http.FileServer(http.Dir(*path))))
 	}
 
