@@ -45,7 +45,12 @@ func versionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func spaHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, *path+"/index.html")
+	url := r.URL.String()
+	if url == *path {
+		http.ServeFile(w, r, *path+"index.html")
+	} else {
+		http.ServeFile(w, r, url)
+	}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +87,8 @@ func main() {
 		}
 		http.HandleFunc(prefix+"_version", versionHandler)
 		if *spa != "" {
-			router.Route(prefix, func(r chi.Router) {
+			spaRoute := filepath.Clean(*spa)
+			router.Route(spaRoute, func(r chi.Router) {
 				r.HandleFunc("/*", spaHandler)
 			})
 		} else {
