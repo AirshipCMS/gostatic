@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/go-chi/chi"
 )
 
 var (
@@ -18,6 +20,7 @@ var (
 	path        = flag.String("static", "/srv/http", "The path for the static files")
 	routePrefix = flag.String("routePrefix", "", "The route path prefix for the static files")
 	headerFlag  = flag.String("appendHeader", "", "HTTP response header, specified as `HeaderName:Value` that should be added to all responses.")
+	spa         = flag.String("spa", "", "SPA route")
 )
 
 func parseHeaderFlag(headerFlag string) (string, string) {
@@ -39,6 +42,10 @@ func versionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.ServeFile(w, r, *path+"/_version.html")
+}
+
+func spaHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -63,9 +70,8 @@ func main() {
 	flag.Parse()
 
 	port := ":" + strconv.FormatInt(int64(*portPtr), 10)
+	router := chi.NewRouter()
 
-	http.HandleFunc("/", handler)
-	http.HandleFunc("/_version", versionHandler)
 	if *routePrefix != "" {
 		prefix := filepath.Clean(*routePrefix)
 		if prefix[0:1] != "/" {
@@ -75,9 +81,18 @@ func main() {
 			prefix = prefix + "/"
 		}
 		http.HandleFunc(prefix+"_version", versionHandler)
-		http.Handle(prefix, http.StripPrefix(prefix[:len(prefix)-1], http.FileServer(http.Dir(*path))))
+		if *spa != "" {
+			router.Route("/account", func(r chi.Router) {
+				r.HandleFunc("/*", spaHandler)
+			})
+		} else {
+			router.Handle(prefix, http.StripPrefix(prefix[:len(prefix)-1], http.FileServer(http.Dir(*path))))
+		}
 	}
 
+	router.HandleFunc("/", handler)
+	router.HandleFunc("/_version", versionHandler)
+
 	log.Printf("Listening at 0.0.0.0%v...", port)
-	log.Fatalln(http.ListenAndServe(port, nil))
+	log.Fatalln(http.ListenAndServe(port, router))
 }
