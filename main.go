@@ -46,8 +46,10 @@ func versionHandler(w http.ResponseWriter, r *http.Request) {
 
 func spaHandler(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.String()
-	if url == *path {
-		http.ServeFile(w, r, *path+"index.html")
+	js := strings.Split(url, ".js")
+	css := strings.Split(url, ".css")
+	if url == *path || (len(js) == 1 && len(css) == 1) {
+		http.ServeFile(w, r, *path+"/index.html")
 	} else {
 		http.ServeFile(w, r, url)
 	}
